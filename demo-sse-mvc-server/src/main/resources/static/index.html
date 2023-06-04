@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Spring MVC Async</title>
+</head>
+<body>
+    <h2>Spring SSE Demo</h2>
+    <div id="custom-event"></div>
+    <div id="short-lasting"></div>
+    <div id="long-lasting"></div>
+</body>
+<script>
+    const customEventSse = new EventSource('/sse/custom-event');
+    customEventSse.addEventListener("custom-event",  (evt) => {
+        const el = document.getElementById('custom-event');
+        el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
+        el.appendChild(document.createElement('br'));
+    });
+
+    const shortLastingSse = new EventSource('/sse/short-lasting');
+    shortLastingSse.onmessage = function (evt) {
+        const el = document.getElementById('short-lasting');
+        el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
+        el.appendChild(document.createElement('br'));
+    };
+    shortLastingSse.addEventListener("complete", (evt) => {
+        console.log(evt.data);
+        evt.target.close();
+    });
+
+    const longLastingSse = new EventSource('/sse/long-lasting');
+    longLastingSse.addEventListener("long-lasting-event", (evt) => {
+        const el = document.getElementById('long-lasting');
+        el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
+        el.appendChild(document.createElement('br'));
+    });
+
+</script>
+</html>
