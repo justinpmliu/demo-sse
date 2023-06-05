@@ -86,12 +86,12 @@ public class SseEmitterController{
     }
 
     @GetMapping("/" + NAME_CUSTOM_EVENT)
-    public SseEmitter getCustomEvent(@RequestHeader(value = "last-event-id", required = false) String lastEventId,
-                                     @RequestParam(value = "prevEventId", required = false) String prevEventId) {
-        log.info("enter getCustomEvent(), prevEventId={}", prevEventId);
+    public SseEmitter getCustomEvent(@RequestHeader(value = "last-event-id", required = false) String sseLastEventId,
+                                     @RequestParam(value = "lastEventId", required = false) String lastEventId) {
+        log.info("enter getCustomEvent(), sseLastEventId={}, lastEventId={}", sseLastEventId, lastEventId);
         SseEmitter emitter = new SseEmitter(-1L);
-        prevEventId = (lastEventId != null) ? lastEventId : prevEventId;
-        resendEvents(NAME_CUSTOM_EVENT, prevEventId, emitter);
+        lastEventId = (sseLastEventId != null) ? sseLastEventId : lastEventId;
+        resendEvents(NAME_CUSTOM_EVENT, lastEventId, emitter);
         return emitters.add(emitter);
     }
 

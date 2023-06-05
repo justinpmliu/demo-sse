@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 @SpringBootApplication
 @Slf4j
 public class DemoSseJaxrsClientApplication implements CommandLineRunner {
-    private static final String URL = "http://localhost:8080/sse/custom-event?prevEventId=";
+    private static final String URL = "http://localhost:8080/sse/custom-event?lastEventId=";
 
     @Autowired
     private SseLastEventIdRepository sseLastEventIdRepository;
