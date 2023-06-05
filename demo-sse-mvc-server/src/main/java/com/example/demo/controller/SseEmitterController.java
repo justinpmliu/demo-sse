@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
+import com.example.demo.dao.SseEventRepository;
+import com.example.demo.entity.SseEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
@@ -9,21 +12,24 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEvent
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
+@RequestMapping("/sse")
 @Slf4j
 public class SseEmitterController{
+    private static final String NAME_CUSTOM_EVENT = "custom-event";
+
     private ExecutorService nonBlockingService = Executors.newCachedThreadPool();
     private final SseEmitters emitters = new SseEmitters();
-    private int customEventId = 0;
-    private HashMap<Integer, String> customEvents = new LinkedHashMap<>();
+
+    @Autowired
+    private SseEventRepository sseEventRepository;
 
     //short-lasting event
-    @GetMapping("/sse/short-lasting")
+    @GetMapping("/short-lasting")
     public SseEmitter getShortLastingEvent(@RequestHeader(value = "last-event-id", required = false) String lastEventId) {
         log.info("enter getShortLastingEvent(), lastEventId={}", lastEventId);
         SseEmitter emitter = new SseEmitter();
@@ -35,12 +41,12 @@ public class SseEmitterController{
                     emitter.send(SseEmitter.event()
                             .id(String.valueOf(i))
                             .name("message")
-                            .data("Short-lasting event @ " + LocalTime.now().toString()));
+                            .data("short-lasting event @ " + LocalTime.now().toString()));
                 }
                 //send "complete" event to let client close connection
                 emitter.send(SseEmitter.event()
                         .name("complete")
-                        .data("Complete @ " + new Date()));
+                        .data("complete @ " + new Date()));
                 emitter.complete();
             } catch (Exception e) {
                 log.info(e.getMessage());
@@ -52,7 +58,7 @@ public class SseEmitterController{
     }
 
     //long-lasting period events
-    @GetMapping("/sse/long-lasting")
+    @GetMapping("/long-lasting")
     public SseEmitter getLongLastingEvent(@RequestHeader(value = "last-event-id", required = false) String lastEventId) {
         log.info("enter getLongLastingEvent(), lastEventId={}", lastEventId);
 
@@ -67,7 +73,7 @@ public class SseEmitterController{
                             .id(String.valueOf(i))
                             .name("long-lasting-event")
                             .reconnectTime(15000)
-                            .data("Long-lasting event @ " + LocalTime.now().toString());
+                            .data("long-lasting event @ " + LocalTime.now().toString());
                     emitter.send(event);
                     Thread.sleep(2000);
                 }
@@ -79,48 +85,47 @@ public class SseEmitterController{
         return emitter;
     }
 
-    @GetMapping(value = "/sse/custom-event", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter listenCustomEvent(@RequestHeader(value = "last-event-id", required = false) String lastEventId) {
-        log.info("enter listenCustomEvent(), lastEventId={}", lastEventId);
+    @GetMapping("/" + NAME_CUSTOM_EVENT)
+    public SseEmitter getCustomEvent(@RequestHeader(value = "last-event-id", required = false) String lastEventId,
+                                     @RequestParam(value = "prevEventId", required = false) String prevEventId) {
+        log.info("enter getCustomEvent(), prevEventId={}", prevEventId);
         SseEmitter emitter = new SseEmitter(-1L);
-        resendCustomEvents(lastEventId, emitter);
+        prevEventId = (lastEventId != null) ? lastEventId : prevEventId;
+        resendEvents(NAME_CUSTOM_EVENT, prevEventId, emitter);
         return emitters.add(emitter);
     }
 
-    @PostMapping("/sse/custom-event")
+    @PostMapping("/" + NAME_CUSTOM_EVENT)
     public void publishCustomEvent(@RequestBody String message) {
-        log.info("enter publishCustomEvent()");
-        this.sendCustomEvent(message);
+        SseEvent sseEvent = new SseEvent(NAME_CUSTOM_EVENT, message);
+        this.saveAndSendEvent(sseEvent);
     }
 
-    private synchronized void sendCustomEvent(String message) {
-        customEventId++;
-        customEvents.put(customEventId, message);
-
+    private synchronized void saveAndSendEvent(SseEvent sseEvent) {
+        sseEventRepository.save(sseEvent);
         SseEventBuilder event = SseEmitter.event()
-                .id(String.valueOf(customEventId))
-                .name("custom-event")
+                .id(String.valueOf(sseEvent.getId()))
+                .name(sseEvent.getName())
                 .reconnectTime(15000)
-                .data("Custom event @ " + message);
+                .data(sseEvent.getData());
         emitters.send(event);
     }
 
-    private synchronized void resendCustomEvents(String lastEventId, SseEmitter emitter) {
-        int prevEventId = (lastEventId == null) ? 0 : Integer.parseInt(lastEventId);
-        if (prevEventId < customEventId) {
-            for (int i = prevEventId + 1; i <= customEventId; i++) {
-                SseEventBuilder event = SseEmitter.event()
-                        .id(String.valueOf(i))
-                        .name("custom-event")
-                        .reconnectTime(15000)
-                        .data("Custom event @ " + this.customEvents.get(i));
-                try {
-                    emitter.send(event);
-                } catch (IOException e) {
-                    log.error(e.getMessage(), e);
-                    emitter.completeWithError(e);
-                    break;
-                }
+    private synchronized void resendEvents(String eventName, String prevEventId, SseEmitter emitter) {
+        int lastEventId = StringUtils.hasText(prevEventId) ? Integer.parseInt(prevEventId) : 0;
+        List<SseEvent> sseEvents = sseEventRepository.findByNameAndIdAfterOrderById(eventName, lastEventId);
+        for (SseEvent sseEvent : sseEvents) {
+            SseEventBuilder event = SseEmitter.event()
+                    .id(String.valueOf(sseEvent.getId()))
+                    .name(eventName)
+                    .reconnectTime(15000)
+                    .data(sseEvent.getData());
+            try {
+                emitter.send(event);
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+                log.info("Emitter failed: {}, cause: {}", emitter, e.getMessage());
+                break;
             }
         }
     }
