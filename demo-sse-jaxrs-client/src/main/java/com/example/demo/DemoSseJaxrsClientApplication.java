@@ -21,7 +21,8 @@ import java.util.function.Consumer;
 @SpringBootApplication
 @Slf4j
 public class DemoSseJaxrsClientApplication implements CommandLineRunner {
-    private static final String URL = "http://localhost:8080/sse/custom-event?lastEventId=";
+    private static final String EVENT_NAME = "custom-event";
+    private static final String URL = "http://localhost:8080/sse/subscribe?name=" + EVENT_NAME + "&lastEventId=";
 
     @Autowired
     private SseLastEventIdRepository sseLastEventIdRepository;
@@ -32,8 +33,8 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String lastEventId = this.getLastEventId("custom-event");
-        log.info("Connect SSE server, lastEventId={}", lastEventId);
+        String lastEventId = this.getLastEventId(EVENT_NAME);
+        log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(lastEventId == null ? URL : URL + lastEventId);
@@ -55,8 +56,11 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
 
     // A new event is received
     private Consumer<InboundSseEvent> onEvent = inboundSseEvent -> {
-        log.info("id: [{}] , name: [{}] , data: [{}]", inboundSseEvent.getId(), inboundSseEvent.getName(), inboundSseEvent.readData());
-        this.saveLastEventId(inboundSseEvent.getName(), inboundSseEvent.getId());
+        log.info("id: [{}] , name: [{}] , data: [{}], comment: [{}]",
+                inboundSseEvent.getId(), inboundSseEvent.getName(), inboundSseEvent.readData(), inboundSseEvent.getComment());
+        if (inboundSseEvent.getName() != null && inboundSseEvent.getId() != null) {
+            this.saveLastEventId(inboundSseEvent.getName(), inboundSseEvent.getId());
+        }
     };
 
     private void saveLastEventId(String name, String lastEventId) {

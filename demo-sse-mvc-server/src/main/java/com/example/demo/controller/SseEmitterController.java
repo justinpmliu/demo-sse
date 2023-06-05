@@ -1,9 +1,10 @@
 package com.example.demo.controller;
 
+import com.example.demo.bean.SseEventMessage;
 import com.example.demo.dao.SseEventRepository;
 import com.example.demo.entity.SseEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -19,14 +20,12 @@ import java.util.concurrent.Executors;
 @RestController
 @RequestMapping("/sse")
 @Slf4j
+@RequiredArgsConstructor
 public class SseEmitterController{
-    private static final String NAME_CUSTOM_EVENT = "custom-event";
+    private final SseEmitters emitters;
+    private final SseEventRepository sseEventRepository;
 
     private ExecutorService nonBlockingService = Executors.newCachedThreadPool();
-    private final SseEmitters emitters = new SseEmitters();
-
-    @Autowired
-    private SseEventRepository sseEventRepository;
 
     //short-lasting event
     @GetMapping("/short-lasting")
@@ -85,19 +84,22 @@ public class SseEmitterController{
         return emitter;
     }
 
-    @GetMapping("/" + NAME_CUSTOM_EVENT)
-    public SseEmitter getCustomEvent(@RequestHeader(value = "last-event-id", required = false) String sseLastEventId,
+    @GetMapping("/subscribe")
+    public SseEmitter subscribe(@RequestHeader(value = "last-event-id", required = false) String sseLastEventId,
+                                     @RequestParam(value = "name") String name,
                                      @RequestParam(value = "lastEventId", required = false) String lastEventId) {
-        log.info("enter getCustomEvent(), sseLastEventId={}, lastEventId={}", sseLastEventId, lastEventId);
+        log.info("enter subscribe(), name={}, sseLastEventId={}, lastEventId={}", name, sseLastEventId, lastEventId);
         SseEmitter emitter = new SseEmitter(-1L);
         lastEventId = (sseLastEventId != null) ? sseLastEventId : lastEventId;
-        resendEvents(NAME_CUSTOM_EVENT, lastEventId, emitter);
-        return emitters.add(emitter);
+        if (!resendEvents(name, lastEventId, emitter)) {
+            this.sendComment(name, emitter, "Connected @ " + LocalTime.now().toString());
+        }
+        return emitters.add(name, emitter);
     }
 
-    @PostMapping("/" + NAME_CUSTOM_EVENT)
-    public void publishCustomEvent(@RequestBody String message) {
-        SseEvent sseEvent = new SseEvent(NAME_CUSTOM_EVENT, message);
+    @PostMapping(value = "/publish")
+    public void publish(@RequestBody SseEventMessage message) {
+        SseEvent sseEvent = new SseEvent(message.getName(), message.getData());
         this.saveAndSendEvent(sseEvent);
     }
 
@@ -108,26 +110,41 @@ public class SseEmitterController{
                 .name(sseEvent.getName())
                 .reconnectTime(15000)
                 .data(sseEvent.getData());
-        emitters.send(event);
+        emitters.send(sseEvent.getName(), event);
         log.info("sent {}", sseEvent);
     }
 
-    private synchronized void resendEvents(String eventName, String prevEventId, SseEmitter emitter) {
+    private synchronized boolean resendEvents(String name, String prevEventId, SseEmitter emitter) {
+        boolean isResent = false;
         int lastEventId = StringUtils.hasText(prevEventId) ? Integer.parseInt(prevEventId) : 0;
-        List<SseEvent> sseEvents = sseEventRepository.findByNameAndIdAfterOrderById(eventName, lastEventId);
+        List<SseEvent> sseEvents = sseEventRepository.findByNameAndIdAfterOrderById(name, lastEventId);
         for (SseEvent sseEvent : sseEvents) {
             SseEventBuilder event = SseEmitter.event()
                     .id(String.valueOf(sseEvent.getId()))
-                    .name(eventName)
+                    .name(name)
                     .reconnectTime(15000)
                     .data(sseEvent.getData());
             try {
                 emitter.send(event);
+                isResent = true;
             } catch (IOException e) {
                 emitter.completeWithError(e);
-                log.info("Emitter failed: {}, cause: {}", emitter, e.getMessage());
+                log.info("Emitter {} failed, event name: {}, cause: {}", emitter, name, e.getMessage());
                 break;
             }
+        }
+        return isResent;
+    }
+
+    private void sendComment(String name, SseEmitter emitter, String comment) {
+        SseEventBuilder event = SseEmitter.event()
+                .reconnectTime(15000)
+                .comment(comment);
+        try {
+            emitter.send(event);
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+            log.info("Emitter {} failed, event name: {}, cause: {}", emitter, name, e.getMessage());
         }
     }
 

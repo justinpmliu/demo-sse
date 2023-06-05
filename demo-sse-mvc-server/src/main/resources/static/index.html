@@ -10,7 +10,7 @@
     <div id="long-lasting"></div>
 </body>
 <script>
-    const customEventSse = new EventSource('/sse/custom-event');
+    const customEventSse = new EventSource('/sse/subscribe?name=custom-event');
     customEventSse.addEventListener("custom-event",  (evt) => {
         const el = document.getElementById('custom-event');
         el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
