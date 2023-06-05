@@ -14,6 +14,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.sse.InboundSseEvent;
 import javax.ws.rs.sse.SseEventSource;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 
@@ -31,13 +32,6 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        while (true) {
-            connect();
-            Thread.sleep(5 * 1000L);
-        }
-    }
-
-    private void connect() {
         String lastEventId = this.getLastEventId("custom-event");
         log.info("Connect SSE server, lastEventId={}", lastEventId);
 
@@ -47,10 +41,12 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
         try (SseEventSource eventSource = SseEventSource.target(target).build()) {
             eventSource.register(onEvent, onError, onComplete);
             eventSource.open();
+
             //Consuming events
-            while (eventSource.isOpen()) {
-                Thread.sleep(1000);
-            }
+            do {
+                TimeUnit.SECONDS.sleep(60);
+            } while (eventSource.isOpen());
+
         } catch (InterruptedException e) {
             log.warn(e.getMessage(), e);
             Thread.currentThread().interrupt();

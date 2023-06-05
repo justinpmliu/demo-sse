@@ -109,6 +109,7 @@ public class SseEmitterController{
                 .reconnectTime(15000)
                 .data(sseEvent.getData());
         emitters.send(event);
+        log.info("sent {}", sseEvent);
     }
 
     private synchronized void resendEvents(String eventName, String prevEventId, SseEmitter emitter) {
