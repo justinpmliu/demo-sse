@@ -38,17 +38,14 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(lastEventId == null ? URL : URL + lastEventId);
 
-        try (SseEventSource eventSource = SseEventSource.target(target).build()) {
+        try (SseEventSource eventSource = SseEventSource.target(target).reconnectingEvery(15, TimeUnit.SECONDS).build()) {
             eventSource.register(onEvent, onError, onComplete);
             eventSource.open();
 
             //Consuming events
-            do {
-                TimeUnit.SECONDS.sleep(60);
-            } while (eventSource.isOpen());
-
+            Thread.currentThread().join();
         } catch (InterruptedException e) {
-            log.warn(e.getMessage(), e);
+            log.info(e.getMessage());
             Thread.currentThread().interrupt();
         }
 
