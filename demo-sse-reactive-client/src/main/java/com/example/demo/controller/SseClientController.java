@@ -19,7 +19,7 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 @Slf4j
 public class SseClientController {
-    private WebClient client = WebClient.create("http://localhost:8081/sse-server");
+    private WebClient client = WebClient.create("http://localhost:8080/sse-server");
     private static final String EVENT_NAME = "custom-event";
     private static final String URL = "/subscribe?name=" + EVENT_NAME + "&lastEventId=";
 

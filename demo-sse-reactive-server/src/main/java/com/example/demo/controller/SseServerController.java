@@ -61,11 +61,7 @@ public class SseServerController {
                         .data(event.getData())
                         .build());
 
-        SubscribableChannel subscribableChannel = channelMap.computeIfAbsent(name, k -> {
-            PublishSubscribeChannel channel = new PublishSubscribeChannel();
-            channel.setBeanName(name);
-            return channel;
-        });
+        SubscribableChannel subscribableChannel = this.getSubscribableChannel(name);
 
         return Flux.concat(resentEvents, Flux.create(sink -> {
             MessageHandler handler = message -> {
@@ -91,8 +87,18 @@ public class SseServerController {
 
     private void saveAndSendEvent(SseEvent sseEvent) {
         sseEventRepository.save(sseEvent);
-        SubscribableChannel subscribableChannel = channelMap.computeIfAbsent(sseEvent.getName(), k -> MessageChannels.publishSubscribe().get());
+        SubscribableChannel subscribableChannel = this.getSubscribableChannel(sseEvent.getName());
         subscribableChannel.send(new GenericMessage<>(sseEvent));
         log.info("sent {}", sseEvent);
+    }
+
+    private SubscribableChannel getSubscribableChannel(String name) {
+        return channelMap.computeIfAbsent(name, k -> {
+            PublishSubscribeChannel channel = new PublishSubscribeChannel();
+            if (channel.getBeanName() == null) {
+                channel.setBeanName(name);
+            }
+            return channel;
+        });
     }
 }
