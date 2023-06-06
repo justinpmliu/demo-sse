@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   datasource:
     url: jdbc:h2:file:./demodb/sse_mvc_server
@@ -5,11 +8,13 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.H2Dialect
+
 management:
   endpoints:
     web:
       exposure:
         include: "health,info,prometheus"
+
 sse-mvc-server:
   housekeeping:
     scheduler: "0 0/5 * * * ?"

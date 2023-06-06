@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class DemoSseJaxrsClientApplication implements CommandLineRunner {
     private static final String EVENT_NAME = "custom-event";
-    private static final String URL = "http://localhost:8080/sse/subscribe?name=" + EVENT_NAME + "&lastEventId=";
+    private static final String URL = "http://localhost:8080/sse-server/subscribe?name=" + EVENT_NAME + "&lastEventId=";
 
     @Autowired
     private SseLastEventIdRepository sseLastEventIdRepository;
@@ -56,8 +56,8 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
 
     // A new event is received
     private Consumer<InboundSseEvent> onEvent = inboundSseEvent -> {
-        log.info("id: [{}] , name: [{}] , data: [{}], comment: [{}]",
-                inboundSseEvent.getId(), inboundSseEvent.getName(), inboundSseEvent.readData(), inboundSseEvent.getComment());
+        log.info("name: [{}] , id: [{}] , data: [{}], comment: [{}]",
+                inboundSseEvent.getName(), inboundSseEvent.getId(), inboundSseEvent.readData(), inboundSseEvent.getComment());
         if (inboundSseEvent.getName() != null && inboundSseEvent.getId() != null) {
             this.saveLastEventId(inboundSseEvent.getName(), inboundSseEvent.getId());
         }

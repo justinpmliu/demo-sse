@@ -8,7 +8,7 @@
 7. [Chapter 16. Server-Sent Events (SSE) | Oreilly](https://www.oreilly.com/library/view/high-performance-browser/9781449344757/ch16.html)
 
 # Publish event to SSE server
-  - (POST) http://localhost:8080/sse/publish
+  - (POST) http://localhost:8080/sse-server/publish
   - Content-Type: application/json
   - Body:
   ```json

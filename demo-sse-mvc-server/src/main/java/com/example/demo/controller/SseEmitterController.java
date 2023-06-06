@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
-@RequestMapping("/sse")
+@RequestMapping("/sse-server")
 @RequiredArgsConstructor
 @Slf4j
 public class SseEmitterController{
