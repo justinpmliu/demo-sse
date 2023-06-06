@@ -36,7 +36,7 @@ public class DemoSseJaxrsClientApplication implements CommandLineRunner {
         String lastEventId = this.getLastEventId(EVENT_NAME);
         log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
 
-        Client client = ClientBuilder.newClient();
+        Client client = ClientBuilder.newBuilder().readTimeout(1, TimeUnit.HOURS).build();
         WebTarget target = client.target(lastEventId == null ? URL : URL + lastEventId);
 
         try (SseEventSource eventSource = SseEventSource.target(target).reconnectingEvery(15, TimeUnit.SECONDS).build()) {

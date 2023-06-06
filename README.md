@@ -1,4 +1,4 @@
-Reference:
+# Reference
 1. [Server-Sent Events in Spring | Baeldung](https://www.baeldung.com/spring-server-sent-events) 
 2. [Spring MVC Streaming and SSE Request Processing | Baeldung](https://www.baeldung.com/spring-mvc-sse-streams)
 3. [Server-Sent Events (SSE) in JAX-RS](https://www.baeldung.com/java-ee-jax-rs-sse)
@@ -6,3 +6,14 @@ Reference:
 5. [Server-Sent Events Using Spring | DZone](https://dzone.com/articles/server-sent-events-using-spring)
 6. [Spring SseEmitter.complete() trigger an EventSource reconnect - how to close connection | stackoverflow](https://stackoverflow.com/questions/55287474/should-spring-sseemitter-complete-trigger-an-eventsource-reconnect-how-to-cl)
 7. [Chapter 16. Server-Sent Events (SSE) | Oreilly](https://www.oreilly.com/library/view/high-performance-browser/9781449344757/ch16.html)
+
+# Publish event to SSE server
+  - (POST) http://localhost:8080/sse/publish
+  - Content-Type: application/json
+  - Body:
+  ```json
+{
+    "name": "custom-event",
+    "data": "Hello World 58"
+}
+  ```
