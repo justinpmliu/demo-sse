@@ -14,6 +14,6 @@
   ```json
 {
     "name": "custom-event",
-    "data": "Hello World 58"
+    "data": "Hello World!"
 }
   ```
