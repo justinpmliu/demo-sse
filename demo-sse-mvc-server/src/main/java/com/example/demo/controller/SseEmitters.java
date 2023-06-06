@@ -57,7 +57,7 @@ class SseEmitters {
                 } catch (Exception e) {
                     emitter.completeWithError(e);
                     failedEmitters.add(emitter);
-                    log.info("Emitter failed: {}, cause: {}", emitter, e.getMessage());
+                    log.info("Emitter failed: {}, event name: {}, cause: {}", emitter, name, e.getMessage());
                 }
             });
             emitters.removeAll(failedEmitters);

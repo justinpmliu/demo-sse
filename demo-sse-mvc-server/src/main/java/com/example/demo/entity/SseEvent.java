@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "SSE_EVENT")
@@ -22,11 +22,11 @@ public class SseEvent {
     private String data;
 
     @Column
-    private Date createdDttm;
+    private LocalDateTime createdDttm;
 
     public SseEvent(String name, String data) {
         this.name = name;
         this.data = data;
-        this.createdDttm = new Date();
+        this.createdDttm = LocalDateTime.now();
     }
 }
