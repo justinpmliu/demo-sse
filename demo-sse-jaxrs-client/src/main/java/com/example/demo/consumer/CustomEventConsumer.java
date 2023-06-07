@@ -51,7 +51,7 @@ public class CustomEventConsumer {
 
     // A new event is received
     private Consumer<InboundSseEvent> onEvent = inboundSseEvent -> {
-        log.info("name: [{}] , id: [{}] , data: [{}], comment: [{}]",
+        log.info("Received: name={}, id={}, data={}, comment={}",
                 inboundSseEvent.getName(), inboundSseEvent.getId(), inboundSseEvent.readData(), inboundSseEvent.getComment());
         if (inboundSseEvent.getName() != null && inboundSseEvent.getId() != null) {
             this.saveLastEventId(inboundSseEvent.getName(), inboundSseEvent.getId());

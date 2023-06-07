@@ -3,6 +3,8 @@ package com.example.demo.controller;
 import com.example.demo.bean.EventData;
 import com.example.demo.dao.SseEventRepository;
 import com.example.demo.dao.entity.SseEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ import java.util.concurrent.Executors;
 public class SseEmitterController{
     private final SseEmitters emitters;
     private final SseEventRepository sseEventRepository;
+    private final ObjectMapper objectMapper;
 
     private static final long RECONNECT_TIME = 15000L;
     private ExecutorService nonBlockingService = Executors.newCachedThreadPool();
@@ -50,10 +53,15 @@ public class SseEmitterController{
     }
 
     @PostMapping(value = "/publish")
-    public ResponseEntity<SseEvent> publish(@RequestBody EventData eventData) {
-        SseEvent sseEvent = new SseEvent(eventData.getName(), eventData.getData());
-        this.saveAndSendEvent(sseEvent);
-        return ResponseEntity.ok(sseEvent);
+    public ResponseEntity<SseEvent> publishBatch(@RequestBody EventData<String> eventData) {
+        try {
+            SseEvent sseEvent = new SseEvent(eventData.getName(), objectMapper.writeValueAsString(eventData.getData()));
+            this.saveAndSendEvent(sseEvent);
+            return ResponseEntity.ok(sseEvent);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     private synchronized void saveAndSendEvent(SseEvent sseEvent) {

@@ -3,6 +3,8 @@ package com.example.demo.controller;
 import com.example.demo.bean.EventData;
 import com.example.demo.dao.SseEventRepository;
 import com.example.demo.dao.entity.SseEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
@@ -27,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SseServerController {
     private final SseEventRepository sseEventRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String[] WORDS = "The quick brown fox jumps over the lazy dog.".split(" ");
 
@@ -77,11 +80,16 @@ public class SseServerController {
         }, FluxSink.OverflowStrategy.LATEST));
     }
 
-    @PostMapping("/publish")
-    public Mono<SseEvent> publish(@RequestBody EventData eventData) {
-        SseEvent sseEvent = new SseEvent(eventData.getName(), eventData.getData());
-        this.saveAndSendEvent(sseEvent);
-        return Mono.just(sseEvent);
+    @PostMapping(value = "/publish")
+    public Mono<SseEvent> publishBatch(@RequestBody EventData<String> eventData) {
+        try {
+            SseEvent sseEvent = new SseEvent(eventData.getName(), objectMapper.writeValueAsString(eventData.getData()));
+            this.saveAndSendEvent(sseEvent);
+            return Mono.just(sseEvent);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage(), e);
+            return Mono.error(e);
+        }
     }
 
     private void saveAndSendEvent(SseEvent sseEvent) {

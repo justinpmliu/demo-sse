@@ -41,7 +41,8 @@ public class CustomEventConsumer {
 
         stringStream.subscribe(
                 event -> {
-                    log.info("Received: name = [{}], id = [{}] , data = [{}]", event.event(), event.id(), event.data());
+                    log.info("Received: name={}, id={}, data={}, comment={}",
+                            event.event(), event.id(), event.data(), event.comment());
                     if (event.event() != null && event.id() != null) {
                         saveLastEventId(event.event(), event.id());
                     }
