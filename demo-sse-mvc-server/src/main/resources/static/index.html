@@ -10,14 +10,15 @@
     <div id="long-lasting"></div>
 </body>
 <script>
-    const customEventSse = new EventSource('/sse/subscribe?name=custom-event');
+    const DOMAIN = '/sse-server';
+    const customEventSse = new EventSource(DOMAIN + '/subscribe?name=custom-event');
     customEventSse.addEventListener("custom-event",  (evt) => {
         const el = document.getElementById('custom-event');
         el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
         el.appendChild(document.createElement('br'));
     });
 
-    const shortLastingSse = new EventSource('/sse/short-lasting');
+    const shortLastingSse = new EventSource(DOMAIN + '/short-lasting');
     shortLastingSse.onmessage = function (evt) {
         const el = document.getElementById('short-lasting');
         el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));
@@ -28,7 +29,7 @@
         evt.target.close();
     });
 
-    const longLastingSse = new EventSource('/sse/long-lasting');
+    const longLastingSse = new EventSource(DOMAIN + '/long-lasting');
     longLastingSse.addEventListener("long-lasting-event", (evt) => {
         const el = document.getElementById('long-lasting');
         el.appendChild(document.createTextNode(evt.lastEventId + ": " + evt.data));

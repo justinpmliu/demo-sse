@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.SseEventRepository;
-import com.example.demo.entity.SseEvent;
+import com.example.demo.dao.entity.SseEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
