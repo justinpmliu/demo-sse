@@ -1,7 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.dao.SseLastEventIdRepository;
-import com.example.demo.entity.SseLastEventId;
+import com.example.demo.dao.entity.SseLastEventId;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;

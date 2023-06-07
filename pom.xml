@@ -20,6 +20,8 @@
     <modules>
         <module>demo-sse-mvc-server</module>
         <module>demo-sse-jaxrs-client</module>
+        <module>demo-sse-flux-server</module>
+        <module>demo-sse-flux-client</module>
     </modules>
 
     <properties>

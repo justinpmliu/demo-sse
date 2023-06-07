@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.bean.EventData;
 import com.example.demo.dao.SseEventRepository;
-import com.example.demo.entity.SseEvent;
+import com.example.demo.dao.entity.SseEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
