@@ -21,6 +21,7 @@ public class CustomEventConsumer {
     private static final String EVENT_NAME = "custom-event";
     private static final String RESOURCE = "/subscribe?name=" + EVENT_NAME + "&lastEventId=";
 
+    private final WebClient client = WebClient.create(BASE_URL);
     private final SseLastEventIdRepository sseLastEventIdRepository;
 
     @Async
@@ -29,7 +30,6 @@ public class CustomEventConsumer {
         log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
         String uri = (lastEventId == null) ? RESOURCE : RESOURCE + lastEventId;
 
-        WebClient client = WebClient.create(BASE_URL);
         ParameterizedTypeReference<ServerSentEvent<String>> type =
                 new ParameterizedTypeReference<ServerSentEvent<String>>() {};
         Flux<ServerSentEvent<String>> stringStream = client.get()

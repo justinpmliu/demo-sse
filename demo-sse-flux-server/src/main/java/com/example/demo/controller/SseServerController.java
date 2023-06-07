@@ -81,7 +81,7 @@ public class SseServerController {
     }
 
     @PostMapping(value = "/publish")
-    public Mono<SseEvent> publishBatch(@RequestBody EventData<String> eventData) {
+    public Mono<SseEvent> publish(@RequestBody EventData<String> eventData) {
         try {
             SseEvent sseEvent = new SseEvent(eventData.getName(), objectMapper.writeValueAsString(eventData.getData()));
             this.saveAndSendEvent(sseEvent);

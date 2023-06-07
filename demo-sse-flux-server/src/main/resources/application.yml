@@ -8,3 +8,14 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.H2Dialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,prometheus"
+
+sse-server:
+  housekeeping:
+    scheduler: "0 0/5 * * * ?"
+    history-in-hours: 4 #keep historical sseEvents in database for the last n hours

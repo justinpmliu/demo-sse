@@ -15,7 +15,7 @@ management:
       exposure:
         include: "health,info,prometheus"
 
-sse-mvc-server:
+sse-server:
   housekeeping:
     scheduler: "0 0/5 * * * ?"
     history-in-hours: 4 #keep historical sseEvents in database for the last n hours

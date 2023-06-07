@@ -53,7 +53,7 @@ public class SseEmitterController{
     }
 
     @PostMapping(value = "/publish")
-    public ResponseEntity<SseEvent> publishBatch(@RequestBody EventData<String> eventData) {
+    public ResponseEntity<SseEvent> publish(@RequestBody EventData<String> eventData) {
         try {
             SseEvent sseEvent = new SseEvent(eventData.getName(), objectMapper.writeValueAsString(eventData.getData()));
             this.saveAndSendEvent(sseEvent);
