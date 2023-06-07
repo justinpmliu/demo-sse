@@ -1,5 +1,6 @@
 server:
   port: 8080
+  shutdown: graceful
 
 spring:
   datasource:
@@ -8,6 +9,8 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.H2Dialect
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
 
 management:
   endpoints:

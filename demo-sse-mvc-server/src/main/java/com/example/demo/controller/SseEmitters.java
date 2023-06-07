@@ -49,6 +49,7 @@ class SseEmitters {
 
     private void send(String name, SseEmitterConsumer<SseEmitter> consumer) {
         List<SseEmitter> emitters = emittersMap.get(name);
+        log.info("name={}, emitters.size()={}", name, emitters.size());
         if (!CollectionUtils.isEmpty(emitters)) {
             List<SseEmitter> failedEmitters = new ArrayList<>();
             emitters.forEach(emitter -> {
