@@ -1,42 +1,39 @@
-package com.example.demo.controller;
+package com.example.demo.consumer;
 
 import com.example.demo.dao.SseLastEventIdRepository;
 import com.example.demo.dao.entity.SseLastEventId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;import org.springframework.http.MediaType;
-import org.springframework.http.codec.ServerSentEvent;import org.springframework.scheduling.annotation.Async;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
-
 import reactor.core.publisher.Flux;
 
-@RestController
-@RequestMapping("/sse-consumer")
+@Component
 @RequiredArgsConstructor
 @Slf4j
-public class SseClientController {
-    private WebClient client = WebClient.create("http://localhost:8080/sse-server");
+public class CustomEventConsumer {
+    private static final String BASE_URL = "http://localhost:8080/sse-server";
     private static final String EVENT_NAME = "custom-event";
-    private static final String URL = "/subscribe?name=" + EVENT_NAME + "&lastEventId=";
+    private static final String RESOURCE = "/subscribe?name=" + EVENT_NAME + "&lastEventId=";
 
     private final SseLastEventIdRepository sseLastEventIdRepository;
 
-    @GetMapping("/custom-event")
-    public String launchCustomEventConsumer() {
-        consumeEvents();
-        return "Launched client to consume custom events. Check the logs...";
-    }
-
     @Async
-    public void consumeEvents() {
+    public void consume() {
+        String lastEventId = this.getLastEventId(EVENT_NAME);
+        log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
+        String uri = (lastEventId == null) ? RESOURCE : RESOURCE + lastEventId;
+
+        WebClient client = WebClient.create(BASE_URL);
         ParameterizedTypeReference<ServerSentEvent<String>> type =
                 new ParameterizedTypeReference<ServerSentEvent<String>>() {};
         Flux<ServerSentEvent<String>> stringStream = client.get()
-                .uri(this.getUrl(URL))
+                .uri(uri)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(type)
@@ -66,21 +63,11 @@ public class SseClientController {
         }
     }
 
-    private String getUrl(String url) {
-        String lastEventId = this.getLastEventId(EVENT_NAME);
-        log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
-        return lastEventId == null ? url : url + lastEventId;
-    }
-
     private String getLastEventId(String name) {
+        SseLastEventId sseLastEventId = null;
         if (StringUtils.hasText(name)) {
-            SseLastEventId sseLastEventId = sseLastEventIdRepository.findByName(name);
-            if (sseLastEventId != null) {
-                return sseLastEventId.getLastEventId();
-            }
+            sseLastEventId = sseLastEventIdRepository.findByName(name);
         }
-        return null;
+        return (sseLastEventId == null) ? null : sseLastEventId.getLastEventId();
     }
-
-
 }
