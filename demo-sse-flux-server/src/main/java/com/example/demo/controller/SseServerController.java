@@ -46,7 +46,7 @@ public class SseServerController {
         long lastEventId = StringUtils.hasText(lastEventIdStr) ? Long.parseLong(lastEventIdStr) : 0;
 
         //event with comment only to indicate connection established
-        Flux<ServerSentEvent<String>> connectedMessage = Flux.just(this.buildComment(
+        Flux<ServerSentEvent<String>> commentEvent = Flux.just(this.buildComment(
                 String.format("Connected @ %s, lastEventId=%s", LocalTime.now().toString(), lastEventIdStr)
         ));
 
@@ -57,7 +57,7 @@ public class SseServerController {
 
         SubscribableChannel subscribableChannel = this.getSubscribableChannel(name);
 
-        return Flux.concat(connectedMessage, resentEvents, Flux.create(sink -> {
+        return Flux.concat(commentEvent, resentEvents, Flux.create(sink -> {
             MessageHandler handler = message -> {
                 SseEvent sseEvent = (SseEvent)message.getPayload();
                 sink.next(buildEvent(sseEvent));
