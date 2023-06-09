@@ -1,16 +1,16 @@
 server:
   port: 8080
-  shutdown: graceful
 
 spring:
   datasource:
     url: jdbc:h2:file:./demodb/sse_mvc_server
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     database-platform: org.hibernate.dialect.H2Dialect
-  lifecycle:
-    timeout-per-shutdown-phase: 10s
+  sql:
+    init:
+      mode: always
 
 management:
   endpoints:
@@ -21,4 +21,4 @@ management:
 sse-server:
   housekeeping:
     scheduler: "0 0/5 * * * ?"
-    history-in-hours: 4 #keep historical sseEvents in database for the last n hours
+    history-in-hours: 1 #keep historical sseEvents in database for the last n hours

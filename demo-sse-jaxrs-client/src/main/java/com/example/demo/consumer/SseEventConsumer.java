@@ -4,6 +4,7 @@ import com.example.demo.dao.SseLastEventIdRepository;
 import com.example.demo.dao.entity.SseLastEventId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -13,24 +14,27 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.sse.InboundSseEvent;
 import javax.ws.rs.sse.SseEventSource;
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class CustomEventConsumer {
-    private static final String EVENT_NAME = "custom-event";
-    private static final String URL = "http://localhost:8080/sse-server/subscribe?name=" + EVENT_NAME + "&lastEventId=";
+public class SseEventConsumer {
+    private static final String URI_SUBSCRIBE = "/subscribe?name=%s&lastEventId=%s";
+
+    @Value("${sse-server.url}")
+    private String sseServerUrl;
 
     private final SseLastEventIdRepository sseLastEventIdRepository;
 
     @Async
-    public void consume() {
-        String lastEventId = this.getLastEventId(EVENT_NAME);
-        log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
+    public void consume(String name) {
+        String lastEventId = this.getLastEventId(name);
+        String url = sseServerUrl + (lastEventId == null ? String.format(URI_SUBSCRIBE, name, "") : String.format(URI_SUBSCRIBE, name, lastEventId));
+        log.info("Start connecting SSE server, url={}", url);
 
-        String url = (lastEventId == null) ? URL : URL + lastEventId;
         Client client = ClientBuilder.newBuilder().readTimeout(1, TimeUnit.HOURS).build();
         WebTarget target = client.target(url);
 
@@ -50,11 +54,12 @@ public class CustomEventConsumer {
     }
 
     // A new event is received
-    private Consumer<InboundSseEvent> onEvent = inboundSseEvent -> {
+    private Consumer<InboundSseEvent> onEvent = event -> {
+        String data = event.readData() == null ? null : new String(Base64.getDecoder().decode((event.readData())));
         log.info("Received: name={}, id={}, data={}, comment={}",
-                inboundSseEvent.getName(), inboundSseEvent.getId(), inboundSseEvent.readData(), inboundSseEvent.getComment());
-        if (inboundSseEvent.getName() != null && inboundSseEvent.getId() != null) {
-            this.saveLastEventId(inboundSseEvent.getName(), inboundSseEvent.getId());
+                event.getName(), event.getId(), data, event.getComment());
+        if (event.getName() != null && event.getId() != null) {
+            this.saveLastEventId(event.getName(), event.getId());
         }
     };
 

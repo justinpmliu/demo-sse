@@ -6,7 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface SseEventRepository extends CrudRepository<SseEvent, Integer> {
-    List<SseEvent> findByNameAndIdAfterOrderById(String name, Integer id);
+public interface SseEventRepository extends CrudRepository<SseEvent, Long> {
+    List<SseEvent> findByNameAndIdAfterOrderById(String name, Long id);
     List<SseEvent> findByCreatedDttmBefore(LocalDateTime before);
 }

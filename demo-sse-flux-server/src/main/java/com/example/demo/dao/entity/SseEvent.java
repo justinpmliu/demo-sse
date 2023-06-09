@@ -13,19 +13,23 @@ import java.time.LocalDateTime;
 public class SseEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column
     private String name;
 
+    @Column(name = "REF_ID")
+    private String refId;
+
     @Column
     private String data;
 
-    @Column
+    @Column(name = "CREATED_DTTM")
     private LocalDateTime createdDttm;
 
-    public SseEvent(String name, String data) {
+    public SseEvent(String name, String refId, String data) {
         this.name = name;
+        this.refId = refId;
         this.data = data;
         this.createdDttm = LocalDateTime.now();
     }

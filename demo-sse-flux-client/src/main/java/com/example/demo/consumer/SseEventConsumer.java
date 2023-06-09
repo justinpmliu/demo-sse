@@ -4,6 +4,7 @@ import com.example.demo.dao.SseLastEventIdRepository;
 import com.example.demo.dao.entity.SseLastEventId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
@@ -13,22 +14,26 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
+import java.util.Base64;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class CustomEventConsumer {
-    private static final String BASE_URL = "http://localhost:8080/sse-server";
-    private static final String EVENT_NAME = "custom-event";
-    private static final String RESOURCE = "/subscribe?name=" + EVENT_NAME + "&lastEventId=";
+public class SseEventConsumer {
+    private static final String URI_SUBSCRIBE = "/subscribe?name=%s&lastEventId=%s";
 
-    private final WebClient client = WebClient.create(BASE_URL);
+    @Value("${sse-server.url}")
+    private String sseServerUrl;
+
     private final SseLastEventIdRepository sseLastEventIdRepository;
 
     @Async
-    public void consume() {
-        String lastEventId = this.getLastEventId(EVENT_NAME);
-        log.info("Connect SSE server, name={}, lastEventId={}", EVENT_NAME, lastEventId);
-        String uri = (lastEventId == null) ? RESOURCE : RESOURCE + lastEventId;
+    public void consume(String name) {
+        WebClient client = WebClient.create(sseServerUrl);
+        String lastEventId = this.getLastEventId(name);
+        String uri = (lastEventId == null) ? String.format(URI_SUBSCRIBE, name, "") : String.format(URI_SUBSCRIBE, name, lastEventId);
+
+        log.info("Star connecting SSE server, url={}", sseServerUrl + uri);
 
         ParameterizedTypeReference<ServerSentEvent<String>> type =
                 new ParameterizedTypeReference<ServerSentEvent<String>>() {};
@@ -41,8 +46,9 @@ public class CustomEventConsumer {
 
         stringStream.subscribe(
                 event -> {
+                    String data = event.data() == null ? null : new String(Base64.getDecoder().decode((event.data())));
                     log.info("Received: name={}, id={}, data={}, comment={}",
-                            event.event(), event.id(), event.data(), event.comment());
+                            event.event(), event.id(), data, event.comment());
 
                     if (event.event() != null && event.id() != null) {
                         saveLastEventId(event.event(), event.id());
