@@ -39,12 +39,12 @@ class SseEmitters {
         return emitter;
     }
 
-    void send(String name, Object obj) {
-        send(name, emitter -> emitter.send(obj));
-    }
-
     void send(String name, SseEmitter.SseEventBuilder builder) {
         send(name, emitter -> emitter.send(builder));
+    }
+
+    void send(SseEmitter.SseEventBuilder builder) {
+        emittersMap.forEach((k, v) -> send(k, emitter -> emitter.send(builder)));
     }
 
     private void send(String name, SseEmitterConsumer<SseEmitter> consumer) {

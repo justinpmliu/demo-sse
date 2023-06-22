@@ -5,14 +5,17 @@ import com.example.demo.dao.SseEventRepository;
 import com.example.demo.dao.entity.SseEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -28,6 +31,9 @@ public class SseServerController {
     private final SseEventRepository sseEventRepository;
 
     private static final long RECONNECT_TIME = 15000L;
+
+    @Value("${sse-server.event.data-encoded}")
+    private boolean isDataEncoded;
 
     @GetMapping("/subscribe")
     public ResponseEntity<SseEmitter> subscribe(
@@ -67,6 +73,13 @@ public class SseServerController {
         return ResponseEntity.ok(response);
     }
 
+    @Scheduled(cron = "*/5 * * * * ?")
+    public void sendHeartbeat() {
+        SseEvent sseEvent = new SseEvent();
+        sseEvent.setComment("heartbeat @ " + LocalDateTime.now().toString());
+        emitters.send(this.buildEvent(sseEvent));
+    }
+
     private synchronized void saveAndSendEvent(SseEvent sseEvent) {
         sseEventRepository.save(sseEvent);
         emitters.send(sseEvent.getName(), this.buildEvent(sseEvent));
@@ -89,10 +102,17 @@ public class SseServerController {
     }
 
     private SseEventBuilder buildEvent(SseEvent sseEvent) {
-        return SseEmitter.event()
-                .id(String.valueOf(sseEvent.getId()))
-                .name(sseEvent.getName())
-                .reconnectTime(RECONNECT_TIME)
-                .data(Base64.getEncoder().encodeToString(sseEvent.getData().getBytes()));
+        if (sseEvent.getData() != null) {
+            String data = isDataEncoded ? Base64.getEncoder().encodeToString(sseEvent.getData().getBytes()) : sseEvent.getData();
+            return SseEmitter.event()
+                    .id(String.valueOf(sseEvent.getId()))
+                    .name(sseEvent.getName())
+                    .reconnectTime(RECONNECT_TIME)
+                    .data(data);
+        } else {
+            return SseEmitter.event()
+                    .reconnectTime(RECONNECT_TIME)
+                    .data(sseEvent.getComment());
+        }
     }
 }

@@ -27,6 +27,9 @@ public class SseEvent {
     @Column(name = "CREATED_DTTM")
     private LocalDateTime createdDttm;
 
+    @Transient
+    private String comment;
+
     public SseEvent(String name, String refId, String data) {
         this.name = name;
         this.refId = refId;

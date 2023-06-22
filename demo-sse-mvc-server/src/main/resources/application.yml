@@ -22,3 +22,5 @@ sse-server:
   housekeeping:
     scheduler: "0 0/5 * * * ?"
     history-in-hours: 1 #keep historical sseEvents in database for the last n hours
+  event:
+    data-encoded: false
